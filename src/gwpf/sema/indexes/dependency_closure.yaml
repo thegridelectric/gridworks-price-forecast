@@ -1,0 +1,14 @@
+# GENERATED FILE - DO NOT EDIT
+# Generated from definitions/registry.yaml
+
+types:
+  gw.stopgap.price.forecast:
+    '000':
+      enums: []
+      formats:
+      - left.right.dot
+      - utc.seconds
+      - uuid4.str
+      types: []
+      versionless_types: []
+versionless_types: {}

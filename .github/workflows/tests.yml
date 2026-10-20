@@ -1,0 +1,35 @@
+name: Tests
+
+on:
+  - push
+  - pull_request
+
+jobs:
+  lint:
+    name: lint / 3.12
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+          enable-cache: true
+      - run: uv sync --all-groups --locked
+      - run: uv run ruff check .
+      - run: uv run ruff format --check .
+
+  tests:
+    name: tests / ${{ matrix.python }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: ${{ matrix.python }}
+          enable-cache: true
+      - run: uv sync --all-groups --locked
+      - run: uv run pytest -q

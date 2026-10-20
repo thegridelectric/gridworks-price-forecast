@@ -1,0 +1,3 @@
+enums: {}
+types:
+  gw.stopgap.price.forecast: stopgap.price.forecast

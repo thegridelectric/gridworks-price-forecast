@@ -1,0 +1,19 @@
+metadata:
+  generated_from: indexes/public_registry.yaml
+  generated_at: '2026-10-20T13:01:02Z'
+  note: Transitive closure of initial_targets
+initial_targets:
+- gw.stopgap.price.forecast:000
+worklist:
+  formats:
+    left.right.dot:
+      path: definitions/formats/left.right.dot.yaml
+    utc.seconds:
+      path: definitions/formats/utc.seconds.yaml
+    uuid4.str:
+      path: definitions/formats/uuid4.str.yaml
+  enums: {}
+  types:
+    gw.stopgap.price.forecast:
+      '000':
+        path: definitions/types/gw.stopgap.price.forecast/000.yaml

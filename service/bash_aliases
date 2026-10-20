@@ -1,0 +1,9 @@
+# gwpf convenience aliases — pure spelling over systemctl/journalctl, no
+# logic. Sourced from the box login's ~/.bashrc; the sudoers drop-in
+# (/etc/sudoers.d/price) grants exactly the systemctl invocations below.
+
+alias pricestart='sudo systemctl start price-api'
+alias pricestop='sudo systemctl stop price-api'
+alias pricerestart='sudo systemctl restart price-api'
+alias pricestatus='systemctl status price-api --no-pager'
+alias pricelog='journalctl -u price-api -f'

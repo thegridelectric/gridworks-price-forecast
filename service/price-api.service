@@ -1,0 +1,16 @@
+[Unit]
+Description=GridWorks price forecast — public read-only HTTP façade (loopback; proxy fronts TLS)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=price
+# Repo root as CWD so `.env` at the repo root resolves.
+WorkingDirectory=/home/price/gridworks-price-forecast
+ExecStart=/home/price/gridworks-price-forecast/.venv/bin/gwpf api
+Restart=always
+RestartSec=1
+
+[Install]
+WantedBy=multi-user.target

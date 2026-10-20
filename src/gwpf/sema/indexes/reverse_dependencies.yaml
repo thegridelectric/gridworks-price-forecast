@@ -1,0 +1,15 @@
+# GENERATED FILE - DO NOT EDIT
+# Generated from definitions/registry.yaml
+
+types: {}
+enums: {}
+formats:
+  left.right.dot:
+    used_by:
+    - gw.stopgap.price.forecast:000
+  utc.seconds:
+    used_by:
+    - gw.stopgap.price.forecast:000
+  uuid4.str:
+    used_by:
+    - gw.stopgap.price.forecast:000

@@ -1,0 +1,15 @@
+# Seed request for gridworks-price-forecast (gwpf).
+#
+# Drives `uv run sema snapshot prepare ... && sema snapshot build --package-name gwpf`
+# (run from the sema repo via scripts/regen_sema_snapshot.sh). The one
+# word is the forecast the service serves; the closure pulls its formats.
+
+initial_targets:
+  types:
+    gw.stopgap.price.forecast: {}
+
+# Local class/module names drop the gw ceremony inside this package:
+# gw.stopgap.price.forecast -> StopgapPriceForecast. Wire TypeNames are
+# untouched.
+local_names:
+  strip_prefixes: [gw]
