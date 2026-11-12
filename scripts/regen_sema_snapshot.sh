@@ -17,6 +17,8 @@
 #
 # Usage:
 #   scripts/regen_sema_snapshot.sh                 # sibling ../sema checkout
+#   ALLOW_STAGED=1 scripts/regen_sema_snapshot.sh  # a dev-only snapshot that
+#                                                  # admits staging words
 #   SEMA_REPO=/path/to/sema scripts/regen_sema_snapshot.sh
 set -euo pipefail
 
@@ -39,8 +41,12 @@ echo "==> seed:      ${SEED}"
 echo "==> package:   ${PACKAGE_NAME}"
 
 cd "${SEMA_REPO}"
-echo "==> sema snapshot prepare"
-uv run sema snapshot prepare "${SEED}"
+PREPARE_ARGS=()
+if [[ "${ALLOW_STAGED:-}" == "1" ]]; then
+  PREPARE_ARGS+=(--allow-staged)
+fi
+echo "==> sema snapshot prepare ${PREPARE_ARGS[*]:-}"
+uv run sema snapshot prepare ${PREPARE_ARGS[@]+"${PREPARE_ARGS[@]}"} "${SEED}"
 echo "==> sema snapshot build --package-name ${PACKAGE_NAME}"
 uv run sema snapshot build --package-name "${PACKAGE_NAME}"
 

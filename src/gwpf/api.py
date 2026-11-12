@@ -1,14 +1,16 @@
-"""HTTP / FastAPI read façade — the service's one delivery path.
+"""HTTP / FastAPI read façade over the kept forecast document.
 
-Public, read-only, CORS-open, TLS at the fronting proxy. The forecast is
-served at two paths: the house-pattern route under the service's
+Public, read-only, CORS-open, TLS at the fronting proxy. The forecast
+view is served at two paths: the house-pattern route under the service's
 hyphenated GNodeAlias, and the legacy route the LTN has hard-coded. The
 response body is the sema word itself, byte-identical to `to_dict()`
-wire form, so `/docs` documents the real schema.
+wire form, so `/docs` documents the real schema. The façade never calls
+ISO-NE; it reads the document the actor keeps in the data dir.
 
 Run: `uv run uvicorn gwpf.api:app --factory` (env-configured).
 """
 
+import time
 from typing import Any
 
 from fastapi import FastAPI, HTTPException
@@ -16,9 +18,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 
 from gwpf.config import GwpfSettings, load_settings
-from gwpf.forecast import ForecastKeeper
-from gwpf.isone import IsoneClient
-from gwpf.sema.types import StopgapPriceForecast
+from gwpf.forecast import ForecastStore, view
+from gwpf.sema.types import PriceForecast
 
 SEMA_DEFINITION_URL = (
     "https://github.com/thegridelectric/sema/blob/dev/"
@@ -26,8 +27,8 @@ SEMA_DEFINITION_URL = (
 )
 
 
-def create_app(settings: GwpfSettings, keeper: ForecastKeeper) -> FastAPI:
-    """Build the read façade over a forecast keeper."""
+def create_app(settings: GwpfSettings, store: ForecastStore) -> FastAPI:
+    """Build the read façade over the kept forecast document."""
     party = settings.service_alias.replace(".", "-")
 
     app = FastAPI(
@@ -48,12 +49,14 @@ def create_app(settings: GwpfSettings, keeper: ForecastKeeper) -> FastAPI:
     def ping() -> dict[str, str]:
         return {"status": "ok"}
 
-    def latest_forecast() -> StopgapPriceForecast:
-        """The current 48-hour forecast (503 when none can be served)."""
-        forecast = keeper.current()
-        if forecast is None:
+    def latest_forecast() -> PriceForecast:
+        """The kept forecast from the top of the next hour (503 when none
+        can be served)."""
+        kept = store.load()
+        cut = None if kept is None else view(kept, time.time())
+        if cut is None:
             raise HTTPException(status_code=503, detail="no price forecast available")
-        return forecast
+        return cut
 
     app.get(f"/{party}/latest-forecast", response_model_exclude_none=True)(
         latest_forecast
@@ -92,9 +95,4 @@ def app() -> FastAPI:
 
     dotenv.load_dotenv(dotenv.find_dotenv())
     settings = load_settings()
-    client = IsoneClient(
-        settings.isone_user,
-        settings.isone_api_pass.get_secret_value(),
-        settings.isone_location_id,
-    )
-    return create_app(settings, ForecastKeeper(settings, client))
+    return create_app(settings, ForecastStore(settings.data_dir))

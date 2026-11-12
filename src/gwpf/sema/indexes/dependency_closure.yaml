@@ -2,11 +2,14 @@
 # Generated from definitions/registry.yaml
 
 types:
-  gw.stopgap.price.forecast:
+  gw.price.forecast:
     '000':
-      enums: []
+      enums:
+      - gw.market.product.name:001
+      - market.price.unit:000
       formats:
       - left.right.dot
+      - utc.milliseconds
       - utc.seconds
       - uuid4.str
       types: []

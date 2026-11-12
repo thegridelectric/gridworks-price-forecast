@@ -1,9 +1,9 @@
 """Day-ahead hourly LMP from ISO-NE web services.
 
-One call per operating day and location. ISO-NE publishes a day's
-day-ahead prices around 13:00 ET the day before; before that the
-endpoint answers with an empty list, which this module reports as no
-prices rather than an error.
+Two calls. `info` answers what ISO-NE has posted: the start of the last
+posted hour and when the posting was made. `day_ahead` returns one
+operating day's hourly prices at one location; a day ISO-NE has not
+posted answers with an empty list.
 """
 
 import xml.etree.ElementTree as ET
@@ -16,7 +16,10 @@ from requests.auth import HTTPBasicAuth
 from gwpf.sema.property_format import UTCSeconds
 
 ISONE_NAMESPACE = {"ns": "http://WEBSERV.iso-ne.com"}
-DAY_AHEAD_URL = "https://webservices.iso-ne.com/api/v1.1/hourlylmp/da/final/day/{day}/location/{location}"
+ISONE_API = "https://webservices.iso-ne.com/api/v1.1"
+DAY_AHEAD_URL = ISONE_API + "/hourlylmp/da/final/day/{day}/location/{location}"
+INFO_URL = ISONE_API + "/hourlylmp/da/final/info"
+ISONE_TIME_FORMAT = "%Y-%m-%dT%H:%M:%S.%f%z"
 TIMEOUT_S = 30
 
 
@@ -29,6 +32,15 @@ class HourlyLmp(NamedTuple):
     lmp_usd_per_mwh: float
 
 
+class Publication(NamedTuple):
+    """What ISO-NE has posted for the day-ahead market: the start of the
+    last posted hour and the time of the posting. Interior to the
+    fetch."""
+
+    latest_begin_s: UTCSeconds
+    posted_s: UTCSeconds
+
+
 class IsoneClient:
     """Fetches day-ahead hourly LMP for one location with basic auth."""
 
@@ -36,15 +48,42 @@ class IsoneClient:
         self.auth = HTTPBasicAuth(user, password)
         self.location_id = location_id
 
+    def info(self) -> Publication:
+        """The latest day-ahead posting."""
+        response = requests.get(INFO_URL, auth=self.auth, timeout=TIMEOUT_S)
+        response.raise_for_status()
+        return parse_info(response.text)
+
     def day_ahead(self, day: date) -> list[HourlyLmp]:
         """The day's day-ahead hourly LMP in hour order; empty when ISO-NE
-        has not published that day yet."""
+        has not posted that day."""
         url = DAY_AHEAD_URL.format(
             day=day.strftime("%Y%m%d"), location=self.location_id
         )
         response = requests.get(url, auth=self.auth, timeout=TIMEOUT_S)
         response.raise_for_status()
         return parse_day_ahead(response.text, self.location_id)
+
+
+def isone_seconds(parent: ET.Element, tag: str) -> UTCSeconds:
+    return int(
+        datetime.strptime(element_text(parent, tag), ISONE_TIME_FORMAT).timestamp()
+    )
+
+
+def element_text(parent: ET.Element, tag: str) -> str:
+    element = parent.find(f"ns:{tag}", ISONE_NAMESPACE)
+    if element is None or element.text is None:
+        raise ValueError(f"ISO-NE {parent.tag} without {tag}")
+    return element.text
+
+
+def parse_info(xml_text: str) -> Publication:
+    root = ET.fromstring(xml_text)
+    return Publication(
+        latest_begin_s=isone_seconds(root, "LatestBeginDate"),
+        posted_s=isone_seconds(root, "CreationDate"),
+    )
 
 
 def parse_day_ahead(xml_text: str, location_id: str) -> list[HourlyLmp]:
@@ -55,10 +94,10 @@ def parse_day_ahead(xml_text: str, location_id: str) -> list[HourlyLmp]:
         location = hourly.find("ns:Location", ISONE_NAMESPACE)
         if location is None or location.attrib.get("LocId") != location_id:
             continue
-        begin = hourly.find("ns:BeginDate", ISONE_NAMESPACE)
-        total = hourly.find("ns:LmpTotal", ISONE_NAMESPACE)
-        if begin is None or begin.text is None or total is None or total.text is None:
-            raise ValueError("ISO-NE HourlyLmp row without BeginDate or LmpTotal")
-        begin_dt = datetime.strptime(begin.text, "%Y-%m-%dT%H:%M:%S.%f%z")
-        rows.append(HourlyLmp(int(begin_dt.timestamp()), float(total.text)))
+        rows.append(
+            HourlyLmp(
+                hour_start_s=isone_seconds(hourly, "BeginDate"),
+                lmp_usd_per_mwh=float(element_text(hourly, "LmpTotal")),
+            )
+        )
     return sorted(rows)

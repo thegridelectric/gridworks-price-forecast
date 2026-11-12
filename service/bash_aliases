@@ -2,8 +2,8 @@
 # logic. Sourced from the box login's ~/.bashrc; the sudoers drop-in
 # (/etc/sudoers.d/price) grants exactly the systemctl invocations below.
 
-alias pricestart='sudo systemctl start price-api'
-alias pricestop='sudo systemctl stop price-api'
-alias pricerestart='sudo systemctl restart price-api'
-alias pricestatus='systemctl status price-api --no-pager'
-alias pricelog='journalctl -u price-api -f'
+alias pricestart='sudo systemctl start price-rabbit price-api'
+alias pricestop='sudo systemctl stop price-rabbit price-api'
+alias pricerestart='sudo systemctl restart price-rabbit price-api'
+alias pricestatus='systemctl status price-rabbit price-api --no-pager'
+alias pricelog='journalctl -u price-rabbit -u price-api -f'

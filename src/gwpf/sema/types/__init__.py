@@ -1,5 +1,5 @@
-from gwpf.sema.types.stopgap_price_forecast import StopgapPriceForecast
+from gwpf.sema.types.price_forecast import PriceForecast
 
 __all__ = [
-    "StopgapPriceForecast",
+    "PriceForecast",
 ]
