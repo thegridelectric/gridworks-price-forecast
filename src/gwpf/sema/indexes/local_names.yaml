@@ -1,3 +1,5 @@
-enums: {}
+enums:
+  gw.market.product.name: market.product.name
+  market.price.unit: market.price.unit
 types:
-  gw.stopgap.price.forecast: stopgap.price.forecast
+  gw.price.forecast: price.forecast

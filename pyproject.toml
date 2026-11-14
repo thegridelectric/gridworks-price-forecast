@@ -18,6 +18,7 @@ dependencies = [
     "pydantic-settings>=2.3.4",
     "python-dotenv>=1.0.0",
     "requests>=2.32.3",
+    "gridworks-base>=0.7.3",
     "fastapi>=0.123.0",
     "uvicorn[standard]>=0.38.0",
 ]

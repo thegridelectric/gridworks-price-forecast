@@ -3,12 +3,12 @@
 from datetime import date, datetime
 
 from gwpf.tariff import (
-    OFF_PEAK_USD_PER_MWH,
-    ON_PEAK_NON_WINTER_USD_PER_MWH,
-    ON_PEAK_WINTER_USD_PER_MWH,
-    SHOULDER_USD_PER_MWH,
+    OFF_PEAK_TIMES1000,
+    ON_PEAK_NON_WINTER_TIMES1000,
+    ON_PEAK_WINTER_TIMES1000,
+    SHOULDER_TIMES1000,
     TARIFF_TZ,
-    delivery_usd_per_mwh,
+    delivery_price_times1000,
     holidays,
 )
 
@@ -19,32 +19,32 @@ def at(year: int, month: int, day: int, hour: int) -> int:
 
 def test_weekday_windows_in_winter() -> None:
     # Tuesday 2026-01-20.
-    assert delivery_usd_per_mwh(at(2026, 1, 20, 6)) == OFF_PEAK_USD_PER_MWH
-    assert delivery_usd_per_mwh(at(2026, 1, 20, 7)) == ON_PEAK_WINTER_USD_PER_MWH
-    assert delivery_usd_per_mwh(at(2026, 1, 20, 11)) == ON_PEAK_WINTER_USD_PER_MWH
-    assert delivery_usd_per_mwh(at(2026, 1, 20, 12)) == SHOULDER_USD_PER_MWH
-    assert delivery_usd_per_mwh(at(2026, 1, 20, 15)) == SHOULDER_USD_PER_MWH
-    assert delivery_usd_per_mwh(at(2026, 1, 20, 16)) == ON_PEAK_WINTER_USD_PER_MWH
-    assert delivery_usd_per_mwh(at(2026, 1, 20, 19)) == ON_PEAK_WINTER_USD_PER_MWH
-    assert delivery_usd_per_mwh(at(2026, 1, 20, 20)) == OFF_PEAK_USD_PER_MWH
+    assert delivery_price_times1000(at(2026, 1, 20, 6)) == OFF_PEAK_TIMES1000
+    assert delivery_price_times1000(at(2026, 1, 20, 7)) == ON_PEAK_WINTER_TIMES1000
+    assert delivery_price_times1000(at(2026, 1, 20, 11)) == ON_PEAK_WINTER_TIMES1000
+    assert delivery_price_times1000(at(2026, 1, 20, 12)) == SHOULDER_TIMES1000
+    assert delivery_price_times1000(at(2026, 1, 20, 15)) == SHOULDER_TIMES1000
+    assert delivery_price_times1000(at(2026, 1, 20, 16)) == ON_PEAK_WINTER_TIMES1000
+    assert delivery_price_times1000(at(2026, 1, 20, 19)) == ON_PEAK_WINTER_TIMES1000
+    assert delivery_price_times1000(at(2026, 1, 20, 20)) == OFF_PEAK_TIMES1000
 
 
 def test_non_winter_on_peak_rate() -> None:
     # Tuesday 2026-10-20.
-    assert delivery_usd_per_mwh(at(2026, 10, 20, 8)) == ON_PEAK_NON_WINTER_USD_PER_MWH
+    assert delivery_price_times1000(at(2026, 10, 20, 8)) == ON_PEAK_NON_WINTER_TIMES1000
 
 
 def test_weekend_has_no_peak() -> None:
     # Saturday 2026-01-24.
-    assert delivery_usd_per_mwh(at(2026, 1, 24, 8)) == SHOULDER_USD_PER_MWH
-    assert delivery_usd_per_mwh(at(2026, 1, 24, 18)) == SHOULDER_USD_PER_MWH
-    assert delivery_usd_per_mwh(at(2026, 1, 24, 21)) == OFF_PEAK_USD_PER_MWH
+    assert delivery_price_times1000(at(2026, 1, 24, 8)) == SHOULDER_TIMES1000
+    assert delivery_price_times1000(at(2026, 1, 24, 18)) == SHOULDER_TIMES1000
+    assert delivery_price_times1000(at(2026, 1, 24, 21)) == OFF_PEAK_TIMES1000
 
 
 def test_holiday_has_no_peak() -> None:
     # Thanksgiving 2026 is Thursday 2026-11-26.
     assert date(2026, 11, 26) in holidays(2026)
-    assert delivery_usd_per_mwh(at(2026, 11, 26, 8)) == SHOULDER_USD_PER_MWH
+    assert delivery_price_times1000(at(2026, 11, 26, 8)) == SHOULDER_TIMES1000
 
 
 def test_holiday_dates() -> None:

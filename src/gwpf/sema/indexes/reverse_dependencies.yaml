@@ -2,14 +2,25 @@
 # Generated from definitions/registry.yaml
 
 types: {}
-enums: {}
+enums:
+  gw.market.product.name:
+    '001':
+      used_by:
+      - gw.price.forecast:000
+  market.price.unit:
+    '000':
+      used_by:
+      - gw.price.forecast:000
 formats:
   left.right.dot:
     used_by:
-    - gw.stopgap.price.forecast:000
+    - gw.price.forecast:000
+  utc.milliseconds:
+    used_by:
+    - gw.price.forecast:000
   utc.seconds:
     used_by:
-    - gw.stopgap.price.forecast:000
+    - gw.price.forecast:000
   uuid4.str:
     used_by:
-    - gw.stopgap.price.forecast:000
+    - gw.price.forecast:000

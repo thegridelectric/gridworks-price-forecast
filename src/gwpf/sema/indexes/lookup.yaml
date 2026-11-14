@@ -9,13 +9,24 @@
 # ------------------------------------------------------------------
 
 types:
-  gw.stopgap.price.forecast:
+  gw.price.forecast:
     latest_version: '000'
     versioning_strategy: literal
     versions:
-      '000': definitions/types/gw.stopgap.price.forecast/000.yaml
-enums: {}
+      '000': definitions/types/gw.price.forecast/000.yaml
+enums:
+  gw.market.product.name:
+    enum_type: versioned
+    latest_version: '001'
+    versions:
+      '001': definitions/enums/gw.market.product.name/001.yaml
+  market.price.unit:
+    enum_type: versioned
+    latest_version: '000'
+    versions:
+      '000': definitions/enums/market.price.unit/000.yaml
 formats:
   left.right.dot: definitions/formats/left.right.dot.yaml
+  utc.milliseconds: definitions/formats/utc.milliseconds.yaml
   utc.seconds: definitions/formats/utc.seconds.yaml
   uuid4.str: definitions/formats/uuid4.str.yaml

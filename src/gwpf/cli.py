@@ -1,19 +1,32 @@
-"""gwpf console entry point — `gwpf {api,show}`.
+"""gwpf console entry point: `gwpf {rabbit,api,show}`.
 
-`price-api.service` runs `gwpf api`; `gwpf show` prints the forecast
-the service would serve right now, for a check from the shell.
+The systemd units run the services (`price-rabbit.service` runs
+`gwpf rabbit`, `price-api.service` runs `gwpf api`); `gwpf show` prints
+the forecast view the API would serve right now, for a check from the
+shell.
 """
 
 import argparse
 import json
 import logging
+import time
 
 import dotenv
 import uvicorn
 
 from gwpf.config import load_settings
-from gwpf.forecast import ForecastKeeper
-from gwpf.isone import IsoneClient
+from gwpf.forecast import ForecastStore, view
+from gwpf.price_actor import PriceActor
+
+
+def run_rabbit() -> None:
+    actor = PriceActor(load_settings())
+    actor.start()
+    try:
+        while actor.main_loop_running:
+            time.sleep(1)
+    except KeyboardInterrupt:
+        actor.stop()
 
 
 def run_api() -> None:
@@ -27,16 +40,11 @@ def run_api() -> None:
 
 
 def run_show() -> None:
-    settings = load_settings()
-    client = IsoneClient(
-        settings.isone_user,
-        settings.isone_api_pass.get_secret_value(),
-        settings.isone_location_id,
-    )
-    forecast = ForecastKeeper(settings, client).current()
-    if forecast is None:
+    kept = ForecastStore(load_settings().data_dir).load()
+    cut = None if kept is None else view(kept, time.time())
+    if cut is None:
         raise SystemExit("no price forecast available")
-    print(json.dumps(forecast.to_dict(), indent=2))
+    print(json.dumps(cut.to_dict(), indent=2))
 
 
 def main(argv: list[str] | None = None) -> None:
@@ -45,11 +53,11 @@ def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(prog="gwpf")
     subcommands = parser.add_subparsers(dest="command", required=True)
     subcommands.add_parser(
+        "rabbit", help="watch ISO-NE and broadcast each new forecast"
+    )
+    subcommands.add_parser(
         "api", help="serve the read façade (loopback; TLS at the proxy)"
     )
-    subcommands.add_parser("show", help="print the forecast the service serves now")
+    subcommands.add_parser("show", help="print the forecast view served now")
     args = parser.parse_args(argv)
-    if args.command == "api":
-        run_api()
-    else:
-        run_show()
+    {"rabbit": run_rabbit, "api": run_api, "show": run_show}[args.command]()

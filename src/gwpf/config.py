@@ -2,31 +2,36 @@
 
 from pathlib import Path
 
+from gwbase.config import GNodeSettings
 from pydantic import SecretStr
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import SettingsConfigDict
 
+from gwpf.sema.enums import MarketProductName
 from gwpf.sema.property_format import LeftRightDot
 
 
-class GwpfSettings(BaseSettings):
-    """Reads from env (GWPF_*) and/or a `.env` file at the repo root."""
+class GwpfSettings(GNodeSettings):
+    """Reads from env (GWPF_*) and/or a `.env` file at the repo root.
 
-    # The service's registered GNode alias; the forecast's FromGNodeAlias.
-    service_alias: LeftRightDot = "hw1.isone.price"
+    Inherits `rabbit`, `g_node_path`, `log_level` and the rest from
+    `GNodeSettings`. `service_alias` MUST match the g.node.gt.json Alias;
+    `GridworksActor` enforces the binding at boot.
+    """
 
-    # The pricing node the forecast covers and its ISO-NE location id.
-    p_node_alias: LeftRightDot = "hw1.isone.ver.keene"
+    service_alias: LeftRightDot = "d1.price"
+    service_name: str = "price-forecast"  # XDG path segment for logs/state
+
+    # The market the forecast is for: its MarketMaker and product. The
+    # ISO-NE location is the node that MarketMaker prices.
+    market_maker_alias: LeftRightDot = "d1.isone.me.versant.keene"
+    product_name: MarketProductName = MarketProductName.rt60gate5
     isone_location_id: str = "43790"
-
-    # The delivery tariff the DistList prices are drawn from.
-    tariff_alias: LeftRightDot = "versant.a1.home.eco.bonus"
 
     # ISO-NE web services (https://webservices.iso-ne.com), basic auth.
     isone_user: str
     isone_api_pass: SecretStr
 
-    # The last good forecast is kept here so a restart never waits on
-    # ISO-NE and a failed fetch leaves the last forecast in place.
+    # The kept forecast document: written by the actor, read by the API.
     data_dir: Path = Path.home() / ".local" / "share" / "gridworks" / "price-forecast"
 
     # The LTN fetches the forecast at this path (the party segment is a
@@ -36,6 +41,10 @@ class GwpfSettings(BaseSettings):
     # The read façade binds loopback; TLS is the fronting proxy's job.
     api_host: str = "127.0.0.1"
     api_port: int = 8532
+
+    # Control-plane participants, required by GridworksActor.
+    my_super_alias: str = "d1.super"
+    my_time_coordinator_alias: str = "d1.time"
 
     model_config = SettingsConfigDict(
         env_prefix="GWPF_",
